@@ -1,11 +1,15 @@
 -- make all the tactics work
 import tactic
-import algebra.pi_instances
+--import algebra.pi_instances -- you'll get the wrong 1 on ℕ² if you do this
 
 -- Let's just use Lean's definition of the naturals and not worry
 -- about what they are or how to make them.
 
 import data.nat.basic
+
+-- some missing simp lemma that Kenny needed
+@[simp] theorem quotient.lift_on_beta₂ {α : Type} {β : Type} [setoid α] (f : α → α → β) (h)
+  (x y : α) : ⟦x⟧.lift_on₂ ⟦y⟧ f h = f x y := rfl
 
 -- Let's now experiment 
 namespace experiment
@@ -212,6 +216,24 @@ notation `first` := prod.fst
 
 notation `second` := prod.snd
 
+@[ext] lemma ext {a b : ℕ²} : first a = first b → second a = second b → a = b :=
+by tidy
+
+lemma ext_iff (a b : ℕ²) : a = b ↔ first a = first b ∧ second a = second b :=
+⟨λ h, by cases h; simp, λ ⟨p, q⟩, ext p q⟩
+
+instance : has_zero ℕ² := ⟨(0, 0)⟩
+@[simp] lemma first_zero : first (0 : ℕ²) = 0 := by refl
+@[simp] lemma second_zero : second (0 : ℕ²) = 0 := by refl
+
+
+def has_one : has_one ℕ² := ⟨(1, 0)⟩
+local attribute [instance] has_one
+
+@[simp] lemma first_one : first (1 : ℕ²) = 1 := by refl
+@[simp] lemma second_one : second (1 : ℕ²) = 0 := by refl
+
+
 def r (a b : ℕ²) := first a + second b = second a + first b
 
 instance : has_equiv ℕ² := ⟨r⟩
@@ -252,6 +274,8 @@ instance : setoid ℕ² :=
   iseqv := r.equiv }
 
 end natsquared
+
+local attribute [instance] natsquared.has_one -- the canonical 1 is another one!
 
 -- definition of int as quotient type
 notation `ℤ3` := quotient natsquared.setoid
@@ -259,86 +283,191 @@ notation `ℤ3` := quotient natsquared.setoid
 -- theorem! It's a ring!
 
 def zero : ℤ3 := ⟦0⟧
+instance : has_zero ℤ3 := ⟨zero⟩
+@[simp] lemma zero.thing0 : (0 : ℤ3) = ⟦0⟧ := rfl
+
+
+
 def one : ℤ3 := ⟦1⟧
+instance : has_one ℤ3 := ⟨one⟩
+@[simp] lemma one.thing0 : (1 : ℤ3) = ⟦1⟧ := rfl
+
+@[simp] lemma one.first : first (1 : ℕ²) = 1 := by refl
+@[simp] lemma one.second : second (1 : ℕ²) = 0 := by refl
 
 open natsquared
 
 @[simp] lemma thing (a b : ℕ²) : a ≈ b ↔ first a + second b = second a + first b := iff.rfl
 
-def add (a b : ℤ3) : ℤ3 := quotient.lift_on₂ a b (λ z w, ⟦(z+w)⟧) begin
+@[simp] def add (a b : ℤ3) : ℤ3 := quotient.lift_on₂ a b (λ z w,
+  ⟦(first z + first w, second z + second w)⟧) begin
   intros,
   simp at *,
   omega,
 end
 
-notation : has_add ℤ3 := ⟨add⟩
+instance : has_add ℤ3 := ⟨add⟩
+
+@[simp] lemma thing2 (a b : ℤ3) : a + b = add a b := rfl 
+
+@[simp] def neg (a : ℤ3) : ℤ3 := quotient.lift_on a (λ b, ⟦(second b, first b)⟧)
+begin
+  intros,
+  simp at *,
+  omega
+end
+
+instance : has_neg ℤ3 := ⟨neg⟩
+
+@[simp] lemma neg.thing0 (a : ℤ3) : -a = neg a := rfl
+
+instance : add_comm_group ℤ3 :=
+{ add := (+),
+  add_assoc := 
+  begin
+    intros a b c,
+    apply quotient.induction_on₃ a b c,
+    intros,
+    simp * at *,
+    omega,
+  end,    
+  zero := 0,
+  zero_add :=
+  begin
+    intro a,
+    apply quotient.induction_on a,
+    intros,
+    simp * at *,
+    omega
+  end,
+  add_zero :=
+  begin
+    intro a,
+    apply quotient.induction_on a,
+    intros,
+    simp * at *,
+    omega
+  end,
+  neg := has_neg.neg,
+  add_left_neg :=
+  begin
+    intro a,
+    apply quotient.induction_on a,
+    intros,
+    simp * at *,
+    omega
+  end,
+  add_comm :=
+  begin
+    intros a b,
+    apply quotient.induction_on₂ a b,
+    intros,
+    simp * at *,
+    omega
+  end
+}
+
+theorem useful (p q r s t u v w : ℕ) (h1 : p + u = q + t) (h2 : r + w = s + v) :
+  p * r + q * s + (t * w + u * v) = p * s + q * r + (t * v + u * w) :=
+begin
+  have h3 : (p + u) * r = (q + t) * r,
+    rw h1,
+  rw [add_mul, add_mul] at h3,
+  apply @nat.add_left_cancel (u * r),
+  rw [show u * r + (p * r + q * s + (t * w + u * v)) = p * r + u * r + q * s + t * w + u * v, by ring],
+  rw h3,
+  rw [show q * r + t * r + q * s + t * w + u * v = t * (r + w) + q * s + u * v + q * r, by ring],
+  rw [show u * r + (p * s + q * r + (t * v + u * w)) = u * (r + w) + p * s + t * v + q * r, by ring],
+  rw [h2, mul_add, mul_add],
+  rw [show t * s + t * v + q * s + u * v + q * r = t * s + q * s + t * v + u * v + q * r, by ring],
+  --uv cancels tv cancels qr cancels
+  suffices : t * s + q * s = (p + u) * s,
+    rw this, ring,
+  rw h1,
+  ring,
+end
 
 
---instance : has_zero ℤ3 := ⟨
+@[simp] def mul (a b : ℤ3) : ℤ3 := quotient.lift_on₂ a b (λ z w,
+  ⟦(first z * first w + second z * second w, first z * second w + second z * first w)⟧) 
+  -- why is this well-defined?
+begin
+  intros,
+  simp at *,
+  apply useful _ _ _ _ _ _ _ _ a_1 a_2,
+end
+
+instance : has_mul ℤ3 := ⟨mul⟩
+
+@[simp] lemma thing3 (a b : ℤ3) : a * b = mul a b := rfl 
+
+
+-- the proof of every lemma is "just multiply it out"
+instance : comm_ring ℤ3 :=
+{ mul := (*),
+  one := 1,
+  mul_assoc := begin
+    intros a b c,
+    apply quotient.induction_on₃ a b c,
+    intros,
+    simp,
+    ring
+  end,
+  one_mul := begin
+    intro a,
+    apply quotient.induction_on a,
+    intros,
+    simp,
+    ring,
+  end,
+  mul_one := begin
+    intro a,
+    apply quotient.induction_on a,
+    intros,
+    simp,
+    ring,
+  end,
+  left_distrib := begin
+    intros a b c,
+    apply quotient.induction_on₃ a b c,
+    intros,
+    apply quotient.sound,
+    simp,
+    ring,
+  end,
+  right_distrib := begin
+    intros a b c,
+    apply quotient.induction_on₃ a b c,
+    intros,
+    apply quotient.sound,
+    simp,
+    ring,
+  end,
+  mul_comm := begin
+    intros a b,
+    apply quotient.induction_on₂ a b,
+    intros,
+    simp,
+    ring,
+  end,
+  ..int3.add_comm_group
+}
+
 end int3
 
-#exit
 namespace int4
 
--- M : Type
--- _inst_1 : add_comm_monoid M
--- S : add_submonoid M
--- ⊢ add_comm_monoid (localization S)
+-- want amazing Amelia-like definition as localisation of a semiring
+-- by a well-behaved equivalence relation.
 
-notation `ℕ²` := ℕ × ℕ
+-- TODO
 
-namespace natsquared
+instance : comm_semiring ℕ := by apply_instance
 
-def first : ℕ² → ℕ
-| (a, b) := a
+-- now what do I localise by to get ℤ as, say, an add_comm_group? Can I get a semiring?
 
-def second : ℕ² → ℕ
-| (a, b) := b
 
-def r (a b : ℕ²) := first a + second b = second a + first b
-
-instance : has_equiv ℕ² := ⟨r⟩
-
-namespace r
-theorem refl (a : ℕ²) : a ≈ a :=
-begin
-  -- unfold it in your head
-  change first a + second a = second a + first a,
-  -- if you delete the line above, the line below still works
-  apply add_comm,
-end
-
-theorem symm (a b : ℕ²) : a ≈ b → b ≈ a :=
-begin
-  intro hab,
-  unfold has_equiv.equiv at *,
-  rw [r] at *,
-  omega,
-end
-
-theorem trans (a b c : ℕ²) : a ≈ b → b ≈ c → a ≈ c :=
-begin
-  intro hab,
-  intro hbc,
-  unfold has_equiv.equiv at *,
-  rw [r] at *,
-  omega,
-end
-
-theorem equiv : equivalence r :=
-⟨refl, symm, trans⟩
-
-end r
-
-instance : setoid ℕ² :=
-{ r := r,
-  iseqv := r.equiv }
-
-end natsquared
-
--- definition of int as quotient type
-notation `ℤ3` := quotient natsquared.setoid
-
+end int4
 
 
 end experiment

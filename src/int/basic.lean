@@ -210,11 +210,7 @@ namespace natsquared
 
 notation `first` := prod.fst
 
---def first : ℕ² → ℕ
---| (a, b) := a
-
-def second : ℕ² → ℕ
-| (a, b) := b
+notation `second` := prod.snd
 
 def r (a b : ℕ²) := first a + second b = second a + first b
 
@@ -274,6 +270,10 @@ def add (a b : ℤ3) : ℤ3 := quotient.lift_on₂ a b (λ z w, ⟦(z+w)⟧) beg
   simp at *,
   omega,
 end
+
+notation : has_add ℤ3 := ⟨add⟩
+
+
 --instance : has_zero ℤ3 := ⟨
 end int3
 

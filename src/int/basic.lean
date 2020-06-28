@@ -208,8 +208,10 @@ notation `ℕ²` := ℕ × ℕ
 
 namespace natsquared
 
-def first : ℕ² → ℕ
-| (a, b) := a
+notation `first` := prod.fst
+
+--def first : ℕ² → ℕ
+--| (a, b) := a
 
 def second : ℕ² → ℕ
 | (a, b) := b
@@ -269,8 +271,7 @@ open natsquared
 
 def add (a b : ℤ3) : ℤ3 := quotient.lift_on₂ a b (λ z w, ⟦(z+w)⟧) begin
   intros,
-  unfold has_equiv.equiv at *,
-  rw [setoid.r] at *,
+  simp at *,
   omega,
 end
 --instance : has_zero ℤ3 := ⟨

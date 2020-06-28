@@ -209,7 +209,7 @@ noncomputable def internal_eqality_thing (X : Type) (F : ℤ2 → X) : ℤ → X
 --   right_inv := sorry }
 
   -- I'm going to try doing int with quotients
-
+  
 namespace int3
 
 notation `ℕ²` := ℕ × ℕ
@@ -230,9 +230,7 @@ instance : has_zero ℕ² := ⟨(0, 0)⟩
 @[simp] lemma first_zero : first (0 : ℕ²) = 0 := by refl
 @[simp] lemma second_zero : second (0 : ℕ²) = 0 := by refl
 
-
-def has_one : has_one ℕ² := ⟨(1, 0)⟩
-local attribute [instance] has_one
+instance has_one : has_one ℕ² := ⟨(1, 0)⟩
 
 @[simp] lemma first_one : first (1 : ℕ²) = 1 := by refl
 @[simp] lemma second_one : second (1 : ℕ²) = 0 := by refl
@@ -288,88 +286,39 @@ notation `ℤ3` := quotient natsquared.setoid
 
 def zero : ℤ3 := ⟦0⟧
 instance : has_zero ℤ3 := ⟨zero⟩
-@[simp] lemma zero.thing0 : (0 : ℤ3) = ⟦0⟧ := rfl
-
-
 
 def one : ℤ3 := ⟦1⟧
 instance : has_one ℤ3 := ⟨one⟩
-@[simp] lemma one.thing0 : (1 : ℤ3) = ⟦1⟧ := rfl
-
-@[simp] lemma one.first : first (1 : ℕ²) = 1 := by refl
-@[simp] lemma one.second : second (1 : ℕ²) = 0 := by refl
 
 open natsquared
 
 @[simp] lemma thing (a b : ℕ²) : a ≈ b ↔ first a + second b = second a + first b := iff.rfl
 
-@[simp] def add (a b : ℤ3) : ℤ3 := quotient.lift_on₂ a b (λ z w,
-  ⟦(first z + first w, second z + second w)⟧) begin
-  intros,
-  simp at *,
-  omega,
-end
+def add : ℤ3 → ℤ3 → ℤ3 := quotient.map₂ (λ z w, (first z + first w, second z + second w)) $
+λ z₁ z₂ w₁ w₂ hz hw, by { rw [thing] at *, omega }
 
 instance : has_add ℤ3 := ⟨add⟩
 
-@[simp] lemma thing2 (a b : ℤ3) : a + b = add a b := rfl 
-
-@[simp] def neg (a : ℤ3) : ℤ3 := quotient.lift_on a (λ b, ⟦(second b, first b)⟧)
-begin
-  intros,
-  simp at *,
-  omega
-end
+def neg : ℤ3 → ℤ3 := quotient.map (λ b, (second b, first b)) $
+λ z₁ z₂ hz, by { rw [thing] at *, omega}
 
 instance : has_neg ℤ3 := ⟨neg⟩
 
-@[simp] lemma neg.thing0 (a : ℤ3) : -a = neg a := rfl
-
 instance : add_comm_group ℤ3 :=
-{ add := (+),
-  add_assoc := 
-  begin
-    intros a b c,
-    apply quotient.induction_on₃ a b c,
-    intros,
-    simp * at *,
-    omega,
-  end,    
+begin refine { add := (+),
+  add_assoc := λ a b c, quotient.induction_on₃ a b c _,
   zero := 0,
-  zero_add :=
-  begin
-    intro a,
-    apply quotient.induction_on a,
-    intros,
-    simp * at *,
-    omega
-  end,
-  add_zero :=
-  begin
-    intro a,
-    apply quotient.induction_on a,
-    intros,
-    simp * at *,
-    omega
-  end,
+  zero_add := quotient.ind _,
+  add_zero := quotient.ind _,
   neg := has_neg.neg,
-  add_left_neg :=
-  begin
-    intro a,
-    apply quotient.induction_on a,
-    intros,
-    simp * at *,
-    omega
-  end,
-  add_comm :=
-  begin
-    intros a b,
-    apply quotient.induction_on₂ a b,
-    intros,
-    simp * at *,
-    omega
-  end
-}
+  add_left_neg := quotient.ind _,
+  add_comm := quotient.ind₂ _ },
+  all_goals
+  { intros,
+    apply quotient.sound,
+    rw [thing],
+    omega },
+end
 
 theorem useful (p q r s t u v w : ℕ) (h1 : p + u = q + t) (h2 : r + w = s + v) :
   p * r + q * s + (t * w + u * v) = p * s + q * r + (t * v + u * w) :=
@@ -391,97 +340,29 @@ begin
   ring,
 end
 
-
-@[simp] def mul (a b : ℤ3) : ℤ3 := quotient.lift_on₂ a b (λ z w,
-  ⟦(first z * first w + second z * second w, first z * second w + second z * first w)⟧) 
-  -- why is this well-defined?
-begin
-  intros,
-  simp at *,
-  apply useful _ _ _ _ _ _ _ _ a_1 a_2,
-end
+def mul : ℤ3 → ℤ3 → ℤ3 := quotient.map₂ (λ z w, (first z * first w + second z * second w, first z * second w + second z * first w)) $
+λ z₁ z₂ hz w₁ w₂ hw, by { rw [thing] at *, apply useful; assumption }
 
 instance : has_mul ℤ3 := ⟨mul⟩
 
-@[simp] lemma thing3 (a b : ℤ3) : a * b = mul a b := rfl 
-
-
--- the proof of every lemma is "just multiply it out"
 instance : comm_ring ℤ3 :=
-{ mul := (*),
-  one := 1,
-  mul_assoc := begin
-    intros a b c,
-    apply quotient.induction_on₃ a b c,
-    intros,
-    simp,
-    ring
-  end,
-  one_mul := begin
-    intro a,
-    apply quotient.induction_on a,
-    intros,
-    simp,
-    ring,
-  end,
-  mul_one := begin
-    intro a,
-    apply quotient.induction_on a,
-    intros,
-    simp,
-    ring,
-  end,
-  left_distrib := begin
-    intros a b c,
-    apply quotient.induction_on₃ a b c,
-    intros,
+begin
+  refine
+  { mul := (*),
+    one := 1,
+    mul_assoc := λ a b c, quotient.induction_on₃ a b c _,
+    one_mul := quotient.ind _,
+    mul_one := quotient.ind _,
+    left_distrib := λ a b c, quotient.induction_on₃ a b c _,
+    right_distrib := λ a b c, quotient.induction_on₃ a b c _,
+    mul_comm := quotient.ind₂ _,
+    ..int3.add_comm_group },
+  all_goals
+  { intros,
     apply quotient.sound,
-    simp,
-    ring,
-  end,
-  right_distrib := begin
-    intros a b c,
-    apply quotient.induction_on₃ a b c,
-    intros,
-    apply quotient.sound,
-    simp,
-    ring,
-  end,
-  mul_comm := begin
-    intros a b,
-    apply quotient.induction_on₂ a b,
-    intros,
-    simp,
-    ring,
-  end,
-  ..int3.add_comm_group
-}
-
--- is this a terrible idea??
-example : ℤ ≃+* ℤ3 :=
-{ to_fun := coe,
-  inv_fun := λ a, quotient.lift_on a (λ b, ((first b : ℕ) : ℤ) - (second b : ℕ)) begin
-    intros,
-    simp * at *,
-    rw sub_eq_sub_iff_add_eq_add,
-    norm_cast,
-    rw a_2,
-    ring,
-  end,
-  left_inv := begin
-    intro x,
-    simp,
-    sorry,
-  end,
-  right_inv := begin
-    intro x,
-    apply quotient.induction_on x,
-    intros,
-    simp * at *,
-    sorry
-  end,
-  map_mul' := sorry,
-  map_add' := sorry }
+    simp only [add_zero, mul_one, second_one, thing, zero_add, first_one, mul_zero],
+    ring },
+end
 
 end int3
 

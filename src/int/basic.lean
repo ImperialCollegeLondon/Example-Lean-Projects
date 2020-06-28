@@ -7,6 +7,10 @@ import tactic
 
 import data.nat.basic
 
+-- later on we'll do isomorphisms of rings
+-- ≃+*
+import data.equiv.ring
+
 -- some missing simp lemma that Kenny needed
 @[simp] theorem quotient.lift_on_beta₂ {α : Type} {β : Type} [setoid α] (f : α → α → β) (h)
   (x y : α) : ⟦x⟧.lift_on₂ ⟦y⟧ f h = f x y := rfl
@@ -452,6 +456,32 @@ instance : comm_ring ℤ3 :=
   end,
   ..int3.add_comm_group
 }
+
+-- is this a terrible idea??
+example : ℤ ≃+* ℤ3 :=
+{ to_fun := coe,
+  inv_fun := λ a, quotient.lift_on a (λ b, ((first b : ℕ) : ℤ) - (second b : ℕ)) begin
+    intros,
+    simp * at *,
+    rw sub_eq_sub_iff_add_eq_add,
+    norm_cast,
+    rw a_2,
+    ring,
+  end,
+  left_inv := begin
+    intro x,
+    simp,
+    sorry,
+  end,
+  right_inv := begin
+    intro x,
+    apply quotient.induction_on x,
+    intros,
+    simp * at *,
+    sorry
+  end,
+  map_mul' := sorry,
+  map_add' := sorry }
 
 end int3
 

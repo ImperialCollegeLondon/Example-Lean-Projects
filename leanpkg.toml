@@ -1,5 +1,5 @@
 [package]
-name = "UROP-ideas"
+name = "Example-Lean-Projects"
 version = "0.1"
 lean_version = "leanprover-community/lean:3.16.5"
 path = "src"

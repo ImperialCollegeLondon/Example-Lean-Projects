@@ -58,6 +58,8 @@ theorem odd_mul_odd {n m : ℕ} (hn : odd n) (hm : odd m) :
 
 /- ## interaction with each other -/
 
+lemma odd_or_even (n : ℕ) : odd n ∨ even n := sorry 
+
+-- hard?
 lemma not_odd_and_even {n : ℕ} : ¬ (odd n ∧ even n) := sorry
 
-lemma odd_or_even (n : ℕ) : odd n ∨ even n := sorry 

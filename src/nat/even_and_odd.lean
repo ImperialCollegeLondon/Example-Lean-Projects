@@ -1,3 +1,6 @@
+/-
+The theory of even and odd numbers
+-/
 def even (n : ℕ) : Prop := ∃ d, n = 2 * d
 def odd (n : ℕ) : Prop := ∃ d, n = 2 * d + 1
 

@@ -499,5 +499,14 @@ instance : comm_semiring ℕ := by apply_instance
 
 end int4
 
+/- question asked to me on Twitter today:
+"How easy is it to show that ℤ are the initial objects
+for pointed types with a self-equivalence"
+
+  This means:
+  if X is a type, if x : X, and if f : X ≃ X is a bijection
+  then you want to define a map ℤ → X
+  sending n to f^{(n)}(x). 
+-/
 
 end experiment

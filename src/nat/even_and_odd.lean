@@ -1,3 +1,4 @@
+import tactic
 /-
 The theory of even and odd numbers
 -/
@@ -11,7 +12,11 @@ for a completely different approach (inductive definitions)
 
 /- ## interaction with 0 -/
 
-lemma even_zero : even 0 := sorry
+lemma even_zero : even 0 :=
+begin
+  unfold even,
+
+end
 
 /- ## interaction with succ -/
 

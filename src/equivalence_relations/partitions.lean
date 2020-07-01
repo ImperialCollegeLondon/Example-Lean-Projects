@@ -1,4 +1,5 @@
 import data.equiv.basic -- bijections with inverses
+import tactic -- we want to use tactics
 
 open set
 

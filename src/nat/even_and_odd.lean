@@ -1,3 +1,7 @@
+import tactic
+/-
+The theory of even and odd numbers
+-/
 def even (n : ℕ) : Prop := ∃ d, n = 2 * d
 def odd (n : ℕ) : Prop := ∃ d, n = 2 * d + 1
 
@@ -8,7 +12,11 @@ for a completely different approach (inductive definitions)
 
 /- ## interaction with 0 -/
 
-lemma even_zero : even 0 := sorry
+lemma even_zero : even 0 :=
+begin
+  unfold even,
+
+end
 
 /- ## interaction with succ -/
 
@@ -50,6 +58,8 @@ theorem odd_mul_odd {n m : ℕ} (hn : odd n) (hm : odd m) :
 
 /- ## interaction with each other -/
 
+lemma odd_or_even (n : ℕ) : odd n ∨ even n := sorry 
+
+-- hard?
 lemma not_odd_and_even {n : ℕ} : ¬ (odd n ∧ even n) := sorry
 
-lemma odd_or_even (n : ℕ) : odd n ∨ even n := sorry 

@@ -1,15 +1,19 @@
 import tactic
 -- there is no definition of a graph in mathlib
 
+/-- an undirected graph with possible loops -/
 structure graph (V : Type) :=
 (E : set (V × V))
 (symm : ∀ e ∈ E, (prod.snd e, prod.fst e) ∈ E)
 
 -- Example of a graph with two vertices, a and b
 
+/-- let v2 be a type with two terms a and b -/
 inductive v2 
 | a : v2
 | b : v2
+
+-- v2 = {a,b} from a set theory point of view
 
 open v2
 

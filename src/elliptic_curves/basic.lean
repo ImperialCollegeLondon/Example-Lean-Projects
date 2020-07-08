@@ -24,8 +24,22 @@ variable (E : elliptic_curve k)
 /-- notation 0 for the "extra point" we added -/
 instance : has_zero (points E) := ⟨none⟩
 
-def neg (P : points E) : points E :=
-if P = 0 then 0 else some ⟨(sorry, sorry), sorry⟩
+def neg : points E → points E
+| none := none
+| (some P) := 
+  let ⟨⟨x, y⟩, hP⟩ := P in 
+  some ⟨(x, -E.a1*x-E.a3-y), begin
+    -- need to prove point is on the curve
+    change y^2 + E.a1*x*y + E.a3*y = x^3 + E.a2*x^2 + E.a4*x + E.a6 at hP,
+    change (-E.a1*x-E.a3-y)^2 + E.a1*x*(-E.a1*x-E.a3-y)+E.a3*(-E.a1*x-E.a3-y)
+      = x^3 + E.a2*x^2 + E.a4*x + E.a6,
+    -- our hypothesis is y^2+...=x^3+...
+    -- want : (a₁x-a₃-y)^2+...=x^3+...
+    -- I claim that our hypothesis equals what we want
+    convert hP using 1,
+    -- RHS's are equal, so it suffices to prove LHS's are equal
+    ring,
+  end⟩
 
 
 end elliptic_curve

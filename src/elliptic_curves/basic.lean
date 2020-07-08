@@ -21,10 +21,10 @@ def points (E : elliptic_curve k) := with_zero {P : k × k // let ⟨x, y⟩ := 
 variable (E : elliptic_curve k)
 
 /-- notation 0 for the "extra point" we added -/
-instance : has_zero (points E) := ⟨none⟩
+instance : has_zero (points E) := with_zero.has_zero
 
 def neg : points E → points E
-| none := none
+| 0 := none
 | (some P) := 
   let ⟨⟨x, y⟩, hP⟩ := P in 
   some ⟨(x, -E.a1*x-E.a3-y), begin

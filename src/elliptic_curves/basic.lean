@@ -34,10 +34,10 @@ instance : has_zero (points E) := with_zero.has_zero
 def scale (E : elliptic_curve k) (d : k) (hd : d ≠ 0) :
   elliptic_curve k :=
 { a1 := d*E.a1,
-  a2 := d*d*E.a2,
-  a3 := d*d*d*E.a3,
-  a4 := d*d*d*d*E.a4,
-  a6 := d*d*d*d*d*d*E.a6,
+  a2 := d^2*E.a2,
+  a3 := d^3*E.a3,
+  a4 := d^4*E.a4,
+  a6 := d^6*E.a6,
   disc_nonzero := begin
     have hE : disc E.a1 E.a2 E.a3 E.a4 E.a6 ≠ 0,
       exact E.disc_nonzero,
@@ -49,7 +49,6 @@ def scale (E : elliptic_curve k) (d : k) (hd : d ≠ 0) :
     ring,
   end }
 
-example (a b c : k) (h : b = c) : a * b = a * c := congr_arg (has_mul.mul a) h
 
 def to_scale (E : elliptic_curve k) (d : k) (hd : d ≠ 0) : points E → points (scale E d hd)
 | 0 := 0
@@ -165,6 +164,9 @@ begin
   ring,
 end
 
+lemma pow_three {R : Type} [comm_ring R] (x : R) :
+x^3=x*x*x := by ring
+
 theorem neg_of_scale (d : k) (hd : d ≠ 0) (P : points (scale E d hd)) :
   E.neg (of_scale E d hd P) = of_scale E d hd ((scale E d hd).neg P) :=
 begin
@@ -173,10 +175,10 @@ begin
   rcases P with ⟨⟨x, y⟩, h⟩,
   simp [scale, of_scale, neg],
   congr',
+  rw pow_three,
   repeat {rw ←mul_assoc},
   simp [hd],
   repeat {rw mul_sub},
-  rw neg_mul_eq_mul_neg,
   repeat {rw ←mul_assoc},
   simp [hd],
   repeat {rw ←mul_assoc},
@@ -193,12 +195,6 @@ begin
     ring }
 end
 
-example (a b : k) : a = b ↔ a - b = 0 := by library_search
-#check sub_eq_zero
-
-lemma pow_three {R : Type} [comm_ring R] (x : R) :
-x^3=x*x*x := by ring
-
 def double : points E → points E
 | 0 := 0
 | (some P) :=
@@ -209,12 +205,15 @@ if h2 : 2*y+E.a1*x+E.a3 = 0 then 0 else
   let td := y*d-sd*x in
   let x₂dd := sd^2+E.a1*sd*d-E.a2*d*d-2*x*d*d in
   let y₂ddd := sd*x₂dd+td*d*d in
+  let y₂ddd' := y*d*d*d-sd*(x*d*d-x₂dd) in
   let P2d : points (scale E d h2) := some ⟨⟨x₂dd, y₂ddd⟩, begin
     unfold points._match_1,
     simp only [y₂ddd, x₂dd, td, sd, scale],
   change y^2 + E.a1*x*y + E.a3*y = x^3 + E.a2*x^2 + E.a4*x + E.a6 at h,
   rw ←sub_eq_zero at h ⊢,
-  
+    have h3 : y₂ddd=y₂ddd',
+      simp only [y₂ddd, y₂ddd', x₂dd, td, sd, scale],
+      ring,
     sorry
   end⟩ in
 

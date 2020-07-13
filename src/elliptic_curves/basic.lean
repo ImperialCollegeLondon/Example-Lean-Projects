@@ -12,19 +12,34 @@ namespace elliptic_curve
 -- "let k be a field"
 variables {k : Type} [field k]
 
+inductive with_zero' (X : Type)
+| zero : with_zero'
+| some (x : X) : with_zero'
+
+
+
 /-- The set of points on an elliptic curve, considered as the affine
   solutions plus an extra term "none" -/
 def points (E : elliptic_curve k) := with_zero {P : k × k // let ⟨x, y⟩ := P in 
   y^2 + E.a1*x*y + E.a3*y = x^3 + E.a2*x^2 + E.a4*x + E.a6}
 
+def poss_invalid_points (E : elliptic_curve k) :=
+with_zero (k × k)
+
+
+
+#print prefix elliptic_curve.points
+
+
 -- "let E be an elliptic curve over k"
 variable (E : elliptic_curve k)
+
 
 /-- notation 0 for the "extra point" we added -/
 instance : has_zero (points E) := with_zero.has_zero
 
 def neg : points E → points E
-| 0 := none
+| 0 := 0
 | (some P) := 
   let ⟨⟨x, y⟩, hP⟩ := P in 
   some ⟨(x, -E.a1*x-E.a3-y), begin
@@ -39,6 +54,19 @@ def neg : points E → points E
     -- RHS's are equal, so it suffices to prove LHS's are equal
     ring,
   end⟩
+
+-- def is_on_curve (E : elliptic_curve k) (x y : k) : points E :=
+-- if h : y^2+E.a1*x*y+E.a3*y = x^3 + E.a2*x^2 + E.a4*x + E.a6 then 
+-- some ⟨⟨x,y⟩,h⟩ else 0
+
+theorem neg_neg : function.involutive (neg E) :=
+begin
+  rintros (_|⟨⟨x, y⟩, h⟩),
+  { refl },
+  { simp only [elliptic_curve.neg],
+    congr,
+    ring }
+end
 
 
 end elliptic_curve

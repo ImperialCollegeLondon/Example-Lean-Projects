@@ -222,8 +222,9 @@ if h2 : 2*y+E.a1*x+E.a3 = 0 then 0 else
   convert key,
     ring,
   end⟩ in
-  of_scale E d h2 P2d
+  E.neg (of_scale E d h2 P2d).
 
+#where
 
 def add : points E → points E → points E
 | 0 P := P
@@ -231,7 +232,20 @@ def add : points E → points E → points E
 | (some P) (some Q) :=
 let ⟨⟨x1, y1⟩, h1⟩ := P in
 let ⟨⟨x2, y2⟩, h2⟩ := Q in
-sorry
+if hd : x1 = x2 then (if y1 = y2 then double E (some P) else 0) else 
+  let d := (x1 - x2) in
+  let sd := (y1 - y2) in
+  let td := y1*d-sd*x1 in
+  let x3dd := sd^2+E.a1*sd*d-E.a2*d*d-(x1+x2)*d*d in
+  let y3ddd := sd*x3dd+td*d*d in
+  let P3 : points (scale E d (sub_ne_zero.2 hd)) :=
+  some ⟨⟨x3dd, y3ddd⟩, begin
+    unfold points._match_1 at h1 h2 ⊢,
+    simp [y3ddd, x3dd, td, sd, scale, d] at ⊢,
+    sorry,
+  end⟩ in
+  E.neg (of_scale E d (sub_ne_zero.2 hd) P3).
+#exit
 
 end elliptic_curve
 

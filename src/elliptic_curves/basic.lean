@@ -206,14 +206,16 @@ if h2 : 2*y+E.a1*x+E.a3 = 0 then 0 else
   let x₂dd := sd^2+E.a1*sd*d-E.a2*d*d-2*x*d*d in
   let y₂ddd := sd*x₂dd+td*d*d in
   let y₂ddd' := y*d*d*d-sd*(x*d*d-x₂dd) in
-  let P2d : points (scale E d h2) := some ⟨⟨x₂dd, y₂ddd⟩, begin
-    unfold points._match_1,
-    simp only [y₂ddd, x₂dd, td, sd, scale],
-  change y^2 + E.a1*x*y + E.a3*y = x^3 + E.a2*x^2 + E.a4*x + E.a6 at h,
+  let P2d : points (scale E d h2) := some ⟨⟨x₂dd, y₂ddd'⟩, begin
+    unfold points._match_1 at h ⊢,
+    simp [y₂ddd', x₂dd, td, sd, scale, d] at h ⊢,
   rw ←sub_eq_zero at h ⊢,
-    have h3 : y₂ddd=y₂ddd',
-      simp only [y₂ddd, y₂ddd', x₂dd, td, sd, scale],
-      ring,
+  -- Aah John I got it!
+
+
+    -- have h3 : y₂ddd=y₂ddd',
+    --   simp only [y₂ddd, y₂ddd', x₂dd, td, sd, scale],
+    --   ring,
     sorry
   end⟩ in
 

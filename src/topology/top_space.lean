@@ -32,16 +32,53 @@ variables (U V : set X)
 
 lemma is_open_union (h₁ : is_open U) (h₂ : is_open V) : is_open (U ∪ V) :=
 begin
-  let f : bool → set X := λ b, if b = tt then U else V,
-  have hf : ∀ b : bool, is_open (f b),
-  { intro b,
-    cases b,
-      exact h₂,
-      exact h₁
-  },
-  convert is_open_Union hf,
-  
+  let 𝒞 : set (set X) := {U, V},
+  have h𝒞 : ∀ U ∈ 𝒞, is_open U,
+  { intros W hW,
+    rcases hW with rfl | ⟨_, _⟩; assumption},
+  convert is_open_sUnion 𝒞 h𝒞,
+  simp only [sUnion_singleton, sUnion_insert]
 end
+
+lemma is_open_empty : is_open (∅ : set X) :=
+begin
+  let 𝒞 : set (set X) := ∅,
+  have h𝒞 : ∀ U ∈ 𝒞, is_open U,
+    rintro U ⟨⟩,
+  convert is_open_sUnion 𝒞 h𝒞,
+  apply sUnion_empty.symm,
+end
+
+/-- A set is closed if its complement is open -/
+def is_closed (U : set X) : Prop := is_open Uᶜ
 
 end topological_space
 
+open topological_space
+
+variables {X : Type} [topological_space X] {Y : Type} [topological_space Y]
+
+/-- A function between topological spaces is continuous if the preimage
+  of every open set is open. -/
+def continuous (f : X → Y) := ∀U, is_open U → is_open (f ⁻¹' U)
+
+theorem continuous_id : continuous (id : X → X) :=
+begin
+  intros U hU,
+--  have h1 : U = id '' U := rfl, -- fails
+--  have h2 : U = id ⁻¹' U := rfl, -- works
+  exact hU,
+end
+
+variables {Z : Type} [topological_space Z]
+
+theorem continuous.comp {g : Y → Z} {f : X → Y} (hg : continuous g) (hf : continuous f) :
+continuous (g ∘ f) :=
+--λ U hU, hf (g⁻¹' U) $ hg _ hU
+begin
+  intros U hU,
+--  change is_open (f⁻¹' (g⁻¹' U)),
+  apply hf (g⁻¹' U),
+  apply hg,
+  assumption,
+end

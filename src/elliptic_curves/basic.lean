@@ -210,58 +210,19 @@ if h2 : 2*y+E.a1*x+E.a3 = 0 then 0 else
     unfold points._match_1 at h ⊢,
     simp [y₂ddd', x₂dd, td, sd, scale, d] at h ⊢,
   rw ←sub_eq_zero at h ⊢,
-  -- Aah John I got it!
-
-
-    -- have h3 : y₂ddd=y₂ddd',
-    --   simp only [y₂ddd, y₂ddd', x₂dd, td, sd, scale],
-    --   ring,
-    sorry
+  -- thank you sagemath!
+  have key : (y ^ 2 + E.a1 * x * y + E.a3 * y - (x ^ 3 + E.a2 * x ^ 2 + E.a4 * x + E.a6)) *
+   (64*y^6 + (192*E.a1*x + 192*E.a3)*y^5 + (240*E.a1^2*x^2 + 480*E.a1*E.a3*x + 240*E.a3^2)*y^4 
+   + (160*E.a1^3*x^3 + 480*E.a1^2*E.a3*x^2 + 480*E.a1*E.a3^2*x + 160*E.a3^3)*y^3 + 
+   (60*E.a1^4*x^4 + 240*E.a1^3*E.a3*x^3 + 360*E.a1^2*E.a3^2*x^2 + 240*E.a1*E.a3^3*x + 
+   60*E.a3^4)*y^2 + (12*E.a1^5*x^5 + 60*E.a1^4*E.a3*x^4 + 120*E.a1^3*E.a3^2*x^3 + 
+   120*E.a1^2*E.a3^3*x^2 + 60*E.a1*E.a3^4*x + 12*E.a3^5)*y + E.a1^6*x^6 + 6*E.a1^5*E.a3*x^5 + 
+   15*E.a1^4*E.a3^2*x^4 + 20*E.a1^3*E.a3^3*x^3 + 15*E.a1^2*E.a3^4*x^2 + 6*E.a1*E.a3^5*x + E.a3^6) = 0,
+    { simp [h]},
+  convert key,
+    ring,
   end⟩ in
-
-  sorry
-
-  #exit 
-  E.neg (some ⟨⟨x₂dd/d/d, y₂ddd/d/d/d⟩,begin
-    change (y₂ddd/d/d/d)^2 + E.a1*(x₂dd/d/d)*(y₂ddd/d/d/d) + E.a3*(y₂ddd/d/d/d) =
-      (x₂dd/d/d)^3 + E.a2*(x₂dd/d/d)^2 + E.a4*(x₂dd/d/d) + E.a6,
-    have hd : d ≠ 0,
-      exact h2,
-    suffices : d^6*((y₂ddd/d/d/d)^2 + E.a1*(x₂dd/d/d)*(y₂ddd/d/d/d) + E.a3*(y₂ddd/d/d/d))
-      = d^6*((x₂dd/d/d)^3 + E.a2*(x₂dd/d/d)^2 + E.a4*(x₂dd/d/d) + E.a6),
-    have hd6 : d^6 ≠ 0,
-      exact pow_ne_zero 6 hd,
-    apply (mul_right_inj' hd6).1 this,
-    repeat {rw pow_two},
-    repeat {rw pow_three}, 
-    repeat {rw mul_add},
-    rw (show d^6=d*d*d*d*d*d, by ring),
-    rw mul_assoc,
-    field_simp [hd],
-    -- simp only [x₂, y₂, s, t],
-
-    sorry
-
-    -- simp,
-    -- field_simp [hd],
-    -- ring,
-  end⟩)
-
-#exit
-def double : points E → points E
-| 0 := 0
-| (some P) :=
-let ⟨⟨x, y⟩, h⟩ := P in
-if h2 : 2*y+E.a1*x+E.a3 = 0 then 0 else
-some ⟨⟨(9*x^4 + (E.a1^2 + 12*E.a2)*x^3 + (-8*E.a1*y + (E.a2*E.a1^2 - E.a3*E.a1 
-+ (4*E.a2^2 + 6*E.a4)))*x^2 + (-8*y^2 + (-E.a1^3 - 4*E.a2*E.a1 - 8*E.a3)*y + 
-(E.a4*E.a1^2 + (4*E.a4*E.a2 - 2*E.a3^2)))*x + ((-E.a1^2 - 4*E.a2)*y^2 + 
-(-E.a3*E.a1^2 - 4*E.a3*E.a2)*y + (E.a4*E.a3*E.a1 + (-E.a3^2*E.a2 + E.a4^2))))
-/
-(E.a1^2*x^2 + (4*E.a1*y + 2*E.a3*E.a1)*x + (4*y^2 + 4*E.a3*y + E.a3^2)), 
-(-27*x^6 + (-9*E.a1^2 - 54*E.a2)*x^5 + (27*E.a1*y + (-E.a1^4 - 15*E.a2*E.a1^2 + 
-(-36*E.a2^2 - 27*E.a4)))*x^4 + (36*y^2 + (8*E.a1^3 + 24*E.a2*E.a1 + 36*E.a3)*y + (-E.a2*E.a1^4 - E.a3*E.a1^3 + (-6*E.a2^2 - 9*E.a4)*E.a1^2 - 6*E.a3*E.a2*E.a1 + (-8*E.a2^3 - 36*E.a4*E.a2 + 9*E.a3^2)))*x^3 + ((9*E.a1^2 + 36*E.a2)*y^2 + (E.a1^5 + 5*E.a2*E.a1^3 + 9*E.a3*E.a1^2 + (4*E.a2^2 + 6*E.a4)*E.a1 + 36*E.a3*E.a2)*y + (-E.a4*E.a1^4 - E.a3*E.a2*E.a1^3 - 7*E.a4*E.a2*E.a1^2 + (-4*E.a3*E.a2^2 - 6*E.a4*E.a3)*E.a1 + (-12*E.a4*E.a2^2 + 9*E.a3^2*E.a2 - 9*E.a4^2)))*x^2 + (-8*E.a1*y^3 + (2*E.a1^4 + 10*E.a2*E.a1^2 - 12*E.a3*E.a1 + (8*E.a2^2 + 12*E.a4))*y^2 + (2*E.a3*E.a1^4 + 10*E.a3*E.a2*E.a1^2 - 6*E.a3^2*E.a1 + (8*E.a3*E.a2^2 + 12*E.a4*E.a3))*y + (-2*E.a4*E.a3*E.a1^3 + (E.a3^2*E.a2 - 2*E.a4^2)*E.a1^2 + (-6*E.a4*E.a3*E.a2 - E.a3^3)*E.a1 + (2*E.a3^2*E.a2^2 - 6*E.a4^2*E.a2 + 3*E.a4*E.a3^2)))*x + (-8*y^4 + (E.a1^3 + 4*E.a2*E.a1 - 20*E.a3)*y^3 + (2*E.a3*E.a1^3 + E.a4*E.a1^2 + 8*E.a3*E.a2*E.a1 + (4*E.a4*E.a2 - 18*E.a3^2))*y^2 + (E.a3^2*E.a1^3 + (5*E.a3^2*E.a2 - E.a4^2)*E.a1 + (4*E.a4*E.a3*E.a2 - 7*E.a3^3))*y + (-E.a4*E.a3^2*E.a1^2 + (E.a3^3*E.a2 - 2*E.a4^2*E.a3)*E.a1 + (E.a4*E.a3^2*E.a2 + (-E.a3^4 - E.a4^3)))))/(E.a1^3*x^3 + (6*E.a1^2*y + 3*E.a3*E.a1^2)*x^2 + (12*E.a1*y^2 + 12*E.a3*E.a1*y + 3*E.a3^2*E.a1)*x + (8*y^3 + 12*E.a3*y^2 + 6*E.a3^2*y + E.a3^3))
-
+  of_scale E d h2 P2d
 
 
 def add : points E → points E → points E

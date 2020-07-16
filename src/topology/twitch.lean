@@ -91,6 +91,36 @@ begin
       simp [hU] }},
 end
 
+lemma is_open_Inter {𝒞 : set (set X)} (h𝒞 : finite 𝒞) :
+  (∀ U ∈ 𝒞, is_open U) → is_open ⋂₀ 𝒞 :=
+begin
+  apply finite.induction_on h𝒞,
+  { -- base case,
+    intros,
+    convert is_open_univ,
+    rw sInter_empty },
+  { -- inductive step
+    -- going to use is_open_inter
+    intro U,
+    intro 𝒞,
+    intro hU𝒞,
+    intro h𝒞,
+    intro h𝒞2,
+    -- h says "assume both U and every element of 𝒞 is open"
+    -- insert U 𝒞 means {U} ∪ 𝒞
+    intro h,
+    rw sInter_insert,
+    apply is_open_inter,
+    { apply h,
+      simp },
+    { apply h𝒞2,
+      intros U hU,
+      apply h,
+      simp [hU] }},
+end
+
+
+
 def is_closed (C : set X) : Prop := is_open Cᶜ
 
 @[simp] lemma is_closed_iff (C : set X) : is_closed C ↔ is_open Cᶜ := iff.rfl
@@ -174,6 +204,25 @@ def compact (C : set X) : Prop :=
 
 def hausdorff (X : Type) [topological_space X] : Prop :=
 ∀ x y : X, x ≠ y → ∃ U V : set X, is_open U ∧ is_open V ∧ x ∈ U ∧ y ∈ V ∧ U ∩ V = ∅
+
+def hausdorff' (X : Type) [topological_space X] : Prop := ∃ (f : Π (x y : X) (hxy : x ≠ y),
+set X × set X), ∀ (x y : X) (hxy : x ≠ y),
+--let ⟨U, V⟩ := f x y hxy in 
+  is_open (f x y hxy).1 ∧ is_open (f x y hxy).2 ∧ x ∈ (f x y hxy).1 ∧ y ∈ (f x y hxy).2 ∧
+  (f x y hxy).1 ∩ (f x y hxy).2 = ∅
+
+theorem hausdorff_iff : hausdorff X ↔ hausdorff' X :=
+begin
+  split,
+  { intro h,
+    choose U V hUV using h, -- unskolemization FTW
+    use [λ x y hxy, (U x y hxy, V x y hxy), hUV] },
+  { rintro ⟨f, hf⟩,
+    intros x y hxy,
+    use (f x y hxy).fst,
+    use (f x y hxy).snd,
+    exact hf x y hxy }
+end
 
 -- Theorem: continuous image of a compact set is compact
 theorem compact_map {f : X → Y} (hf : continuous f) {C : set X} (hC : compact C) :
@@ -292,6 +341,19 @@ end⟩
 --         apply h2 hxU }}}
 -- end
 
+-- theory of interiors
+def interior (U : set X) : set X :=
+⋃₀{V : set X | is_open V ∧ V ⊆ U}
+
+lemma interior_open (U : set X) : is_open (interior U) :=
+begin
+  apply is_open_sUnion,
+  tidy,
+end
+
+example (X Y : Type) (f : X → Y) (s : set X) (hs : finite s) : finite (f '' s) :=
+finite.image f hs
+
 -- prove this next Tues
 theorem is_closed_of_compact (hX : hausdorff X) {C : set X} (hC : compact C) : is_closed C :=
 begin
@@ -303,21 +365,90 @@ begin
   -- by the previous lemma
   rw open_iff_locally_open,
   intros x hx,
-  -- Where do we find such U?
-  -- Now is where we use compactness.
-  -- We're going to cover C by a bunch of open sets
-  -- Where do we get the open sets?
-  -- We get them from Hausdorffness
-  -- Say y ∈ C
-  -- Then x ≠ y because x ∉ C
-  -- so by Hausdorff, x ∈ V₁ and y ∈ V₂ and V₁ ∩ V₂ = ∅
-  -- In particular x ∉ V₂ = V₂(y)
-  -- The union of the V₂(y) covers C because y ∈ C was arbitrary and y ∈ V₂(y)
-  -- So there's a finite subcover
-  -- Now take the intersection of the corresponding V₁(y)
-  -- finite intersection of open sets is open
-  -- and completely misses C
-  
+  rw hausdorff_iff at hX,
+  specialize hC C,
+  cases hX with f hf,
+  let U : C → set X := λ c, (f c.1 x begin cases c, rintro rfl, contradiction, end).1,
+  specialize hC U,
+  specialize hC _, swap,
+  { intro c,
+    specialize hf c.1 x begin cases c, rintro rfl, contradiction, end,
+    exact hf.1
+  },
+  specialize hC _, swap,
+  { intros c hc,
+    specialize hf c x begin rintro rfl, contradiction, end,
+    rw mem_Union,
+    use ⟨c, hc⟩,
+    simp [hf] },
+  rcases hC with ⟨F, hF1, hF2⟩,
+  /-
+  lemma is_open_sInter {𝒞 : set (set X)} (h𝒞 : finite 𝒞) :
+  (∀ U ∈ 𝒞, is_open U) → is_open ⋂₀ 𝒞 :=
+  -/
+  let 𝒞 : set (set X) :=
+    (λ (c : C), (f c.1 x begin cases c, rintro rfl, contradiction, end).2)'' F,
+  use ⋂₀𝒞,
+  split,
+  { rintros V ⟨c,hc, rfl⟩,
+    specialize hf c x begin rintro rfl, cases c, contradiction, end,
+    simp [hf] },
+  split,
+  { have h𝒞 : finite 𝒞 := finite.image _ hF1,
+    apply is_open_sInter h𝒞,
+    rintros U ⟨c, hc, rfl⟩,
+    specialize hf c x begin rintro rfl, cases c, contradiction, end,
+    simp [hf] },
+  intros y hy,
+  intro hy2,
+  specialize hF2 hy2,
+  rw mem_bUnion_iff at hF2,
+  rcases hF2 with ⟨c,hcF, h2⟩,
+  specialize hf c x begin rintro rfl, cases c, contradiction, end,
+  rcases (hf.2.2) with ⟨h3, h4, h5⟩,
+  change y ∈ (f c.val x _).fst at h2,
+  specialize hy _ ⟨c, hcF, rfl⟩,
+  dsimp at hy,
+  rw eq_empty_iff_forall_not_mem at h5,
+  apply h5 y,
+  split; tauto
 end
+
+-- #exit
+--   { -- The open set containing x within Cᶜ is the 
+--     -- finite intersection of the V(cᵢ), 1 ≤ i ≤ n
+--     -- where x ∈ V(cᵢ) and cᵢ ∈ W(cᵢ) disjoint opens
+--     -- by Haudsorffness, and the cᵢ are chosen so
+--     -- that the finite union of the W(cᵢ) covers C
+--     -- For any y in C, choose V(y) and W(y). Then
+--     -- the W(y) cover C, and the cᵢ are the finite
+--     -- subcover. x ∈ V(y), y ∈ W(y), V(y) ∩ W(y) is empty
+--     sorry },
+
+
+--   -- Now is where we use compactness.
+--   -- We're going to cover C by a bunch of open sets
+--   -- Where do we get the open sets?
+--   -- We get them from Hausdorffness
+--   -- Say y ∈ C
+--   -- Let's try the Barton trick
+--   -- let R : ∀ y : X, y ∈ C → set (set X × set X) :=
+--   --   λ y hy, {VW : set X × set X | let (V,W) := VW in
+--   --     is_open V ∧ is_open W ∧ x ∈ V ∧ y ∈ W ∧ V ∩ W = ∅},
+--   -- -- Hausdorffness implies that forall y ∈ C, R y ≠ ∅.
+--   -- -- now let's define the cover of C.
+--   -- let 𝒞 :  
+
+--   sorry  
+--   -- Then x ≠ y because x ∉ C
+--   -- so by Hausdorff, x ∈ V₁ and y ∈ V₂ and V₁ ∩ V₂ = ∅
+--   -- In particular x ∉ V₂ = V₂(y)
+--   -- The union of the V₂(y) covers C because y ∈ C was arbitrary and y ∈ V₂(y)
+--   -- So there's a finite subcover
+--   -- Now take the intersection of the corresponding V₁(y)
+--   -- finite intersection of open sets is open
+--   -- and completely misses C
+
+-- end
 
 

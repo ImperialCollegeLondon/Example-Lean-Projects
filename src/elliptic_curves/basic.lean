@@ -206,24 +206,24 @@ if h2 : 2*y+E.a1*x+E.a3 = 0 then 0 else
   let x₂dd := sd^2+E.a1*sd*d-E.a2*d*d-2*x*d*d in
   let y₂ddd := sd*x₂dd+td*d*d in
   let y₂ddd' := y*d*d*d-sd*(x*d*d-x₂dd) in
-  let P2d : points (scale E d h2) := some ⟨⟨x₂dd, y₂ddd'⟩, begin
+  let P2d : points (scale E d h2) := some ⟨⟨x₂dd, y₂ddd⟩, begin
     unfold points._match_1 at h ⊢,
-    simp [y₂ddd', x₂dd, td, sd, scale, d] at h ⊢,
+    simp [y₂ddd, x₂dd, td, sd, scale, d] at h ⊢,
   rw ←sub_eq_zero at h ⊢,
   -- thank you sagemath!
   have key : (y ^ 2 + E.a1 * x * y + E.a3 * y - (x ^ 3 + E.a2 * x ^ 2 + E.a4 * x + E.a6)) *
-   (64*y^6 + (192*E.a1*x + 192*E.a3)*y^5 + (240*E.a1^2*x^2 + 480*E.a1*E.a3*x + 240*E.a3^2)*y^4 
-   + (160*E.a1^3*x^3 + 480*E.a1^2*E.a3*x^2 + 480*E.a1*E.a3^2*x + 160*E.a3^3)*y^3 + 
-   (60*E.a1^4*x^4 + 240*E.a1^3*E.a3*x^3 + 360*E.a1^2*E.a3^2*x^2 + 240*E.a1*E.a3^3*x + 
-   60*E.a3^4)*y^2 + (12*E.a1^5*x^5 + 60*E.a1^4*E.a3*x^4 + 120*E.a1^3*E.a3^2*x^3 + 
-   120*E.a1^2*E.a3^3*x^2 + 60*E.a1*E.a3^4*x + 12*E.a3^5)*y + E.a1^6*x^6 + 6*E.a1^5*E.a3*x^5 + 
-   15*E.a1^4*E.a3^2*x^4 + 20*E.a1^3*E.a3^3*x^3 + 15*E.a1^2*E.a3^4*x^2 + 6*E.a1*E.a3^5*x + E.a3^6) = 0,
-    { simp [h]},
+(64*y^6 + (192*E.a1*x + 192*E.a3)*y^5 + (240*E.a1^2*x^2 + 480*E.a1*E.a3*x + 240*E.a3^2)*y^4 + 
+(160*E.a1^3*x^3 + 480*E.a1^2*E.a3*x^2 + 480*E.a1*E.a3^2*x + 160*E.a3^3)*y^3 + 
+(60*E.a1^4*x^4 + 240*E.a1^3*E.a3*x^3 + 360*E.a1^2*E.a3^2*x^2 + 240*E.a1*E.a3^3*x + 
+60*E.a3^4)*y^2 + (12*E.a1^5*x^5 + 60*E.a1^4*E.a3*x^4 + 120*E.a1^3*E.a3^2*x^3 + 
+120*E.a1^2*E.a3^3*x^2 + 60*E.a1*E.a3^4*x + 12*E.a3^5)*y + E.a1^6*x^6 + 
+6*E.a1^5*E.a3*x^5 + 15*E.a1^4*E.a3^2*x^4 + 20*E.a1^3*E.a3^3*x^3 + 
+15*E.a1^2*E.a3^4*x^2 + 6*E.a1*E.a3^5*x + E.a3^6) = 0,
+    { simp [h] },
   convert key,
     ring,
   end⟩ in
-  of_scale E d h2 P2d
-
+  E.neg (of_scale E d h2 P2d).
 
 def add : points E → points E → points E
 | 0 P := P
@@ -231,7 +231,48 @@ def add : points E → points E → points E
 | (some P) (some Q) :=
 let ⟨⟨x1, y1⟩, h1⟩ := P in
 let ⟨⟨x2, y2⟩, h2⟩ := Q in
-sorry
+if hd : x1 = x2 then (if y1 = y2 then double E (some P) else 0) else 
+  let d := (x1 - x2) in
+  let sd := (y1 - y2) in
+  let td := y1*d-sd*x1 in
+  let x3dd := sd^2+E.a1*sd*d-E.a2*d*d-(x1+x2)*d*d in
+  let y3ddd := sd*x3dd+td*d*d in
+  let q1 := ((-2*x1^3 + 6*x1^2*x2 - 6*x1*x2^2 + 2*x2^3)*y1 - E.a1*x1^4 +
+3*E.a1*x1^3*x2 - 3*E.a1*x1^2*x2^2 + E.a1*x1*x2^3 - E.a3*x1^3 +
+3*E.a3*x1^2*x2 - 3*E.a3*x1*x2^2 + E.a3*x2^3)*y2 + (x1^3 - 3*x1^2*x2 +
+3*x1*x2^2 - x2^3)*y1^2 + (E.a1*x1^4 - 4*E.a1*x1^3*x2 +
+6*E.a1*x1^2*x2^2 - 4*E.a1*x1*x2^3 + E.a1*x2^4)*y1 - E.a2*x1^5 - x1^6 +
+5*E.a2*x1^4*x2 + 3*x1^5*x2 - 9*E.a2*x1^3*x2^2 + 7*E.a2*x1^2*x2^3 -
+9*x1^3*x2^3 - 2*E.a2*x1*x2^4 + 12*x1^2*x2^4 - 6*x1*x2^5 + x2^6 +
+E.a4*x1^3*x2 - 3*E.a4*x1^2*x2^2 + 3*E.a4*x1*x2^3 - E.a4*x2^4 +
+E.a6*x1^3 - 3*E.a6*x1^2*x2 + 3*E.a6*x1*x2^2 - E.a6*x2^3 in
+
+  let q2 := (-x1^3 + 3*x1^2*x2 - 3*x1*x2^2 + x2^3)*y2^2 + ((2*x1^3 -
+6*x1^2*x2 + 6*x1*x2^2 - 2*x2^3)*y1 + E.a1*x1^4 - 4*E.a1*x1^3*x2 +
+6*E.a1*x1^2*x2^2 - 4*E.a1*x1*x2^3 + E.a1*x2^4)*y2 + (E.a1*x1^3*x2 -
+3*E.a1*x1^2*x2^2 + 3*E.a1*x1*x2^3 - E.a1*x2^4 + E.a3*x1^3 -
+3*E.a3*x1^2*x2 + 3*E.a3*x1*x2^2 - E.a3*x2^3)*y1 + x1^6 -
+2*E.a2*x1^4*x2 - 6*x1^5*x2 + 7*E.a2*x1^3*x2^2 + 12*x1^4*x2^2 -
+9*E.a2*x1^2*x2^3 - 9*x1^3*x2^3 + 5*E.a2*x1*x2^4 - E.a2*x2^5 +
+3*x1*x2^5 - x2^6 - E.a4*x1^4 + 3*E.a4*x1^3*x2 - 3*E.a4*x1^2*x2^2 +
+E.a4*x1*x2^3 - E.a6*x1^3 + 3*E.a6*x1^2*x2 - 3*E.a6*x1*x2^2 + E.a6*x2^3 in
+  let P3 : points (scale E d (sub_ne_zero.2 hd)) :=
+  some ⟨⟨x3dd, y3ddd⟩, begin
+    unfold points._match_1 at h1 h2 ⊢,
+    simp [y3ddd, x3dd, td, sd, scale, d] at ⊢,
+    rw ←sub_eq_zero at h1 h2 ⊢,
+    have : q1 * (y1 ^ 2 + E.a1 * x1 * y1 + E.a3 * y1 - (x1 ^ 3 + E.a2 * x1 ^ 2 + E.a4 * x1 + E.a6))
+      + q2 * (y2 ^ 2 + E.a1 * x2 * y2 + E.a3 * y2 - (x2 ^ 3 + E.a2 * x2 ^ 2 + E.a4 * x2 + E.a6)) = 0,
+    { rw h1,
+      rw h2,
+      simp
+      
+    },
+    convert this,
+    simp only [q1, q2],
+    ring,
+  end⟩ in
+  E.neg (of_scale E d (sub_ne_zero.2 hd) P3).
 
 end elliptic_curve
 

@@ -2,7 +2,10 @@
 
 -- Turns out there's quite a lot to it, but it's all straightforward
 
--- I'll start in a second
+-- I'll start on the hour. I'll do a brief review of last week
+-- (the below file, 
+-- https://github.com/ImperialCollegeLondon/Example-Lean-Projects/blob/master/src/topology/twitch.lean
+-- and then I'll start on the proof that the continuous image of compact is compact.
 
 import tactic
 
@@ -164,31 +167,157 @@ theorem continuous.comp' {f : X → Y} {g : Y → Z} (hf : continuous f)
 
 /-- a subset C of a top space X is compact if every open cover has a finite subcover -/
 def compact (C : set X) : Prop :=
-∀ 𝒞 : set (set X), (∀ U ∈ 𝒞, is_open U) → (C ⊆ ⋃₀ 𝒞) →
-  ∃ F : set (set X), F ⊆ 𝒞 ∧ finite F ∧ C ⊆ ⋃₀ 𝒞
+  ∀ (ι : Type) (U : ι → set X) (hi : ∀ i : ι, is_open (U i)) (hC : C ⊆ ⋃i, U i),
+  ∃ F : set ι, finite F ∧ C ⊆ ⋃ i ∈ F, U i
+
+-- this definition seems to me to be easier to work with
 
 def hausdorff (X : Type) [topological_space X] : Prop :=
 ∀ x y : X, x ≠ y → ∃ U V : set X, is_open U ∧ is_open V ∧ x ∈ U ∧ y ∈ V ∧ U ∩ V = ∅
 
--- theorem (finish this next time)
--- continuous image of a compact set is compact
+-- Theorem: continuous image of a compact set is compact
 theorem compact_map {f : X → Y} (hf : continuous f) {C : set X} (hC : compact C) :
   compact (f '' C) :=
 begin
-  intro 𝒞,
-  intro h𝒞,
-  intro hC𝒞,
-  unfold compact at hC,
-  --have test := (f⁻¹' : set Y → set X),
-  -- want 𝒟 to be a collectio of subsets of X
-  -- given by pulling back all the elements of Y.
-  set 𝒟 := (f ⁻¹' : set Y → set X)'',
-  sorry
+  -- suffices to prove that if f(C) is covered by open sets, it has a 
+  -- finite subcover
+  intros I U hU hUC,
+  -- hUC : f(C) ⊆ ⋃_{i ∈ I} Uᵢ
+  -- So say we've covered f(C) by open sets
+  -- Then C has a cover by open sets, namely Vᵢ := f⁻¹(Uᵢ),
+  let V : I → set X := λ i, f⁻¹' (U i),
+  -- Let's check that all the Vᵢ are open
+  have hV : ∀ i : I, is_open (V i),
+  { intro i,
+    apply hf,
+    apply hU },
+  -- Let's check that the Vᵢ cover C
+  have hVC : C ⊆ ⋃ i, V i,
+  { -- say x ∈ C,
+    intro x,
+    intro hx,
+    -- then f(x) ∈ ⋃_i Uᵢ
+    have hx2 : f x ∈ ⋃ i, U i,
+      apply hUC,
+      use [x, hx],
+    -- f(x) ∈ ⋃_i Uᵢ, so ∃ i s.t. f(x) ∈ Uᵢ
+    rw mem_Union at hx2 ⊢,
+    cases hx2 with i hi,
+    use i,
+    exact hi },
+  -- but C is compact
+  specialize hC I V hV hVC,
+  -- so there exists a finite subcover of Vᵢ,
+  rcases hC with ⟨F, hF, hFC⟩,
+  -- I claim that corresponding Uᵢ will work
+  use [F, hF],
+  -- Let's check they cover f(C),
+  rintros _ ⟨x, hx1, rfl⟩,
+  specialize hFC hx1,
+  rw mem_bUnion_iff at hFC ⊢,
+  exact hFC,
+  -- They do, so the cover of f(C) had a finite subcover :D
 end
 
+-- To prove that a compact subspace of a Hausdorff space is closed,
+-- we need the fact that a "locally open" set is open!
+
+-- So let's prove that first
+
+lemma open_iff_locally_open (V : set X) :
+  is_open V ↔ ∀ x : X, x ∈ V → ∃ U : set X, x ∈ U ∧ is_open U ∧ U ⊆ V :=
+⟨λ hV x hx, ⟨V, hx, hV, subset.refl _⟩, λ h, begin
+  let 𝒞 : set (set X) := {U : set X | is_open U ∧ U ⊆ V},
+    -- 𝒞 doesn't just contain the neighbourhoods of x for each x ∈ V
+    -- 𝒞 contains more sets, e.g. the empty set!
+    -- Clearly every set in 𝒞 is open, so their union is open
+    convert is_open_sUnion 𝒞 _,
+    swap,
+    { intros U H, cases H, assumption},
+    -- It suffices to prove that V is the union of the elements of 𝒞
+    { ext x,
+      split,
+      -- let's prove inclusions in both directions
+      { intro hx,
+        rcases h x hx with ⟨U, hU1, hU2, hU3⟩,
+        rw mem_sUnion,
+        use U,
+        use hU2,
+        exact hU3,
+        exact hU1 },
+      { -- easy way
+        intro hx,
+        rw mem_sUnion at hx,
+        rcases hx with ⟨U, hUC, hxU⟩,
+        cases hUC with h1 h2,
+        apply h2 hxU }}
+end⟩
+-- #exit
+-- begin
+--   split,
+--   { -- This way is easy. Say V is open.
+--     intro hV,
+--     -- say x ∈ V
+--     intros x hx,
+--     -- Want an open neighbourhood of x contained in V
+--     -- let's just use V :-)
+--     use V,
+--     use hx,
+--     use hV }, -- last goal V ⊆ V closed automatically by `refl`,
+--   { intro h,
+--     -- Reid Barton trick!
+--     let 𝒞 : set (set X) := {U : set X | is_open U ∧ U ⊆ V},
+--     -- 𝒞 doesn't just contain the neighbourhoods of x for each x ∈ V
+--     -- 𝒞 contains more sets, e.g. the empty set!
+--     -- Clearly every set in 𝒞 is open, so their union is open
+--     convert is_open_sUnion 𝒞 _,
+--     swap,
+--     { tidy },
+--     -- It suffices to prove that V is the union of the elements of 𝒞
+--     { ext x,
+--       split,
+--       -- let's prove inclusions in both directions
+--       { intro hx,
+--         rcases h x hx with ⟨U, hU1, hU2, hU3⟩,
+--         rw mem_sUnion,
+--         use U,
+--         use hU2,
+--         exact hU3,
+--         exact hU1 },
+--       { -- easy way
+--         intro hx,
+--         rw mem_sUnion at hx,
+--         rcases hx with ⟨U, hUC, hxU⟩,
+--         cases hUC with h1 h2,
+--         apply h2 hxU }}}
+-- end
+
+-- prove this next Tues
 theorem is_closed_of_compact (hX : hausdorff X) {C : set X} (hC : compact C) : is_closed C :=
 begin
-  sorry
+  unfold is_closed,
+  -- let's start with the maths proof
+  -- We're going to prove that Cᶜ is open by showing it's locally open
+  -- Let x ∈ Cᶜ i.e. x : X and x ∉ C
+  -- If we can find an open subset U ⊆ Cᶜ with x ∈ U then we're done
+  -- by the previous lemma
+  rw open_iff_locally_open,
+  intros x hx,
+  -- Where do we find such U?
+  -- Now is where we use compactness.
+  -- We're going to cover C by a bunch of open sets
+  -- Where do we get the open sets?
+  -- We get them from Hausdorffness
+  -- Say y ∈ C
+  -- Then x ≠ y because x ∉ C
+  -- so by Hausdorff, x ∈ V₁ and y ∈ V₂ and V₁ ∩ V₂ = ∅
+  -- In particular x ∉ V₂ = V₂(y)
+  -- The union of the V₂(y) covers C because y ∈ C was arbitrary and y ∈ V₂(y)
+  -- So there's a finite subcover
+  -- Now take the intersection of the corresponding V₁(y)
+  -- finite intersection of open sets is open
+  -- and completely misses C
+  
 end
 
 

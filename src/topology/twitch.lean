@@ -91,6 +91,23 @@ begin
       simp [hU] }},
 end
 
+-- a variant of finite intersection of opens is open
+lemma is_open_bInter {I : Type} {F : set I} (hf : finite F)
+  (U : I → set X) (hU : ∀ (i : I), is_open (U i)) : 
+  is_open (⋂ i ∈ F, U i) :=
+begin
+  rw bInter_eq_Inter,
+  show is_open (⋂₀ set.range (λ x : F, U x)),
+  apply is_open_sInter,
+  { rw ←image_univ,
+    apply finite.image,
+    haveI := classical.choice hf,
+    apply finite_univ },
+  finish,
+end
+
+
+
 def is_closed (C : set X) : Prop := is_open Cᶜ
 
 @[simp] lemma is_closed_iff (C : set X) : is_closed C ↔ is_open Cᶜ := iff.rfl
@@ -292,7 +309,13 @@ end⟩
 --         apply h2 hxU }}}
 -- end
 
--- prove this next Tues
+
+
+-- stream starts at 10am UK time (UTC+2)
+
+-- Goal today
+
+
 theorem is_closed_of_compact (hX : hausdorff X) {C : set X} (hC : compact C) : is_closed C :=
 begin
   unfold is_closed,
@@ -303,21 +326,100 @@ begin
   -- by the previous lemma
   rw open_iff_locally_open,
   intros x hx,
+  rw mem_compl_iff at hx,
   -- Where do we find such U?
   -- Now is where we use compactness.
   -- We're going to cover C by a bunch of open sets
   -- Where do we get the open sets?
   -- We get them from Hausdorffness
-  -- Say y ∈ C
+  -- Let's regard x as fixed.
+  -- Say y ∈ C (y is moving)
   -- Then x ≠ y because x ∉ C
-  -- so by Hausdorff, x ∈ V₁ and y ∈ V₂ and V₁ ∩ V₂ = ∅
-  -- In particular x ∉ V₂ = V₂(y)
-  -- The union of the V₂(y) covers C because y ∈ C was arbitrary and y ∈ V₂(y)
-  -- So there's a finite subcover
-  -- Now take the intersection of the corresponding V₁(y)
-  -- finite intersection of open sets is open
-  -- and completely misses C
-  
+  -- so by Hausdorff there exists opens U=U(y) and V=V(y)
+  -- disjoint, with x ∈ V and y ∈ U
+  -- In particular x ∉ U = U(y)
+  -- The union of the U(y) covers C because y ∈ C was arbitrary and y ∈ U(y)
+  -- So there's a finite subcover, U(y₁), U(y₂)...U(yₙ) of C
+  -- Now take the intersection of the corresponding V(y)'s
+  -- this is an open nhd of x
+  -- and it's disjoint from the union of the U(y)'s so it's disjoint from C
+  -- This V works!
+
+  -- "issue" with the maths proof -- uses the axiom of choice!
+  -- Grateful to Reid Barton and Andrej Bauer who independently showed
+  -- me a "AC removal principle" -- which makes proofs look (a) a bit slicker
+  -- and (b) a bit harder to remember (possibly).
+
+  -- AC removal principle says "DON'T CHOOSE! USE ALL THE CHOICES!"
+
+  -- in our actual proof we'll define a slightly different cover
+
+  -- I is the set of pairs (V,U) of open subsets of X, with
+  -- x ∈ V, and U ∩ V empty
+  let I := {VU : set X × set X //
+    x ∈ VU.1 ∧ is_open VU.1 ∧ is_open VU.2 ∧ VU.1 ∩ VU.2 = ∅},
+  -- We want to consider all the U's coming from pairs (V,U) in I
+  let U : I → set X := λ VUH, VUH.1.2, -- send (V,U) to U
+  -- My claim is that as i ranges through I, the U(i) are an open cover
+  -- Let's first prove they're all open
+  have hU1 : ∀ i : I, is_open (U i),
+  { rintro ⟨⟨V, U⟩, _, _, h, _⟩,
+    exact h },
+  -- now let's prove they cover C
+  have hU2 : C ⊆ ⋃ i, U i,
+  { intros y hy,
+    /-
+    def hausdorff (X : Type) [topological_space X] : Prop :=
+    ∀ x y : X, x ≠ y → ∃ U V : set X, is_open U ∧ is_open V ∧ x ∈ U ∧ y ∈ V ∧ U ∩ V = ∅
+    -/
+    have hxy : x ≠ y,
+    { rintro rfl,
+      contradiction },
+    -- now use that X is Hausdorff
+    rcases hX x y hxy with ⟨V, U, hV, hU, hxV, hyU, hUV⟩,
+    rw mem_Union,
+    -- now let's give the term of type I
+    use ⟨(V, U), ⟨hxV, hV, hU, hUV⟩⟩,
+    exact hyU },
+  /-
+  def compact (C : set X) : Prop :=
+  ∀ (ι : Type) (U : ι → set X) (hi : ∀ i : ι, is_open (U i)) (hC : C ⊆ ⋃i, U i),
+  ∃ F : set ι, finite F ∧ C ⊆ ⋃ i ∈ F, U i
+  -/
+  specialize hC I U hU1 hU2,
+  rcases hC with ⟨F, hF, hFC⟩,
+  -- now we have our finite subcover
+  -- now let's create the open nhd of x
+  let W := ⋂ i ∈ F, (i : I).1.1,
+  use W,
+  refine ⟨_, _, _⟩,
+  { show x ∈ ⋂ (i : I) (H : i ∈ F), i.val.fst,
+    rw mem_bInter_iff,
+    rintro ⟨⟨V, U⟩, hxV, hV, hU, hUV⟩,
+    intro hi,
+    use hxV },
+  { -- we're missing a lemma here
+    -- need a different kind of "finite intersection of opens is open"
+    show is_open (⋂ (i : I) (H : i ∈ F), i.val.fst),
+    apply is_open_bInter hF,
+    rintro ⟨⟨V, U⟩, hxV, hV, hU, hUV⟩,
+    exact hV,
+  },
+  { rw subset_compl_comm,
+    rw compl_Inter,
+    refine set.subset.trans hFC _,
+    apply Union_subset_Union,
+    intro i,
+    rw compl_Inter,
+    apply Union_subset_Union,
+    rintro hi,
+    rcases i with ⟨⟨V, U⟩, hxV, hV, hU, hUV⟩,
+    show U ⊆ Vᶜ,
+    rw subset_compl_iff_disjoint,
+    rw inter_comm,
+    exact hUV },
 end
+
+
 
 
